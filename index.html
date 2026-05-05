@@ -1,479 +1,777 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chromata — Explorador de Paletas</title>
-  <meta name="description" content="Genera paletas de colores hermosas al instante." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <!-- Aquí conectamos el nuevo archivo CSS -->
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ColorsRam</title>
+    <meta
+      name="description"
+      content="Genera paletas de colores hermosas al instante."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="shortcut icon" href="colorcc.png" type="image/x-icon" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="logo">ColorsRam <span></span></div>
+      <div class="topbar-right">
+        <div class="mode-tabs" role="group" aria-label="Modo de paleta">
+          <button class="mode-tab active" data-mode="random">Libre</button>
+          <button class="mode-tab" data-mode="analogous">Análoga</button>
+          <button class="mode-tab" data-mode="complementary">
+            Complementaria
+          </button>
+          <button class="mode-tab" data-mode="triadic">Triádica</button>
+          <button class="mode-tab" data-mode="monochromatic">Mono</button>
+        </div>
+        <div class="hint-pill"><kbd>espacio</kbd> genera</div>
+      </div>
+    </header>
 
-<!-- TOP BAR -->
-<header class="topbar">
-  <div class="logo">ColorsRam <span></span></div>
-  <div class="topbar-right">
-    <div class="mode-tabs" role="group" aria-label="Modo de paleta">
-      <button class="mode-tab active" data-mode="random">Libre</button>
-      <button class="mode-tab" data-mode="analogous">Análoga</button>
-      <button class="mode-tab" data-mode="complementary">Complementaria</button>
-      <button class="mode-tab" data-mode="triadic">Triádica</button>
-      <button class="mode-tab" data-mode="monochromatic">Mono</button>
+    <!-- PALETA -->
+    <div id="palette" role="list" aria-label="Paleta de colores"></div>
+
+    <!-- PANEL HISTORIAL -->
+    <aside id="history-panel" aria-label="Historial de paletas">
+      <div class="panel-head">
+        <span class="panel-title">Historial</span>
+        <button
+          class="panel-close"
+          id="closeHistory"
+          aria-label="Cerrar historial"
+        >
+          <svg
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div id="history-list" role="list" aria-label="Paletas guardadas"></div>
+    </aside>
+
+    <!-- OVERLAY -->
+    <div id="overlay"></div>
+
+    <!-- PANEL EXPORTAR -->
+    <div
+      id="export-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Exportar paleta"
+    >
+      <div class="export-head">
+        <span class="export-title">Exportar paleta</span>
+        <button class="panel-close" id="closeExport" aria-label="Cerrar">
+          <svg
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div class="export-body">
+        <span class="export-label">Vista previa</span>
+        <div class="export-swatches" id="export-swatches"></div>
+        <span class="export-label">Formato</span>
+        <div class="export-formats">
+          <button class="export-format-btn" data-fmt="hex">
+            <div>
+              <div class="fmt-label">Códigos HEX</div>
+              <div class="fmt-desc">#FF6B6B, #4ECDC4…</div>
+            </div>
+            <div class="fmt-icon">
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          </button>
+          <button class="export-format-btn" data-fmt="hsl">
+            <div>
+              <div class="fmt-label">Valores HSL</div>
+              <div class="fmt-desc">hsl(0, 72%, 65%)</div>
+            </div>
+            <div class="fmt-icon">
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          </button>
+          <button class="export-format-btn" data-fmt="css">
+            <div>
+              <div class="fmt-label">Variables CSS</div>
+              <div class="fmt-desc">--color-1: #FF6B6B;</div>
+            </div>
+            <div class="fmt-icon">
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          </button>
+          <button class="export-format-btn" data-fmt="tailwind">
+            <div>
+              <div class="fmt-label">Config Tailwind</div>
+              <div class="fmt-desc">colors: { primary: '#FF6B6B' }</div>
+            </div>
+            <div class="fmt-icon">
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="hint-pill"><kbd>espacio</kbd> genera</div>
-  </div>
-</header>
 
-<!-- PALETA -->
-<div id="palette" role="list" aria-label="Paleta de colores"></div>
-
-<!-- PANEL HISTORIAL -->
-<aside id="history-panel" aria-label="Historial de paletas">
-  <div class="panel-head">
-    <span class="panel-title">Historial</span>
-    <button class="panel-close" id="closeHistory" aria-label="Cerrar historial">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-    </button>
-  </div>
-  <div id="history-list" role="list" aria-label="Paletas guardadas"></div>
-</aside>
-
-<!-- OVERLAY -->
-<div id="overlay"></div>
-
-<!-- PANEL EXPORTAR -->
-<div id="export-panel" role="dialog" aria-modal="true" aria-label="Exportar paleta">
-  <div class="export-head">
-    <span class="export-title">Exportar paleta</span>
-    <button class="panel-close" id="closeExport" aria-label="Cerrar">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-    </button>
-  </div>
-  <div class="export-body">
-    <span class="export-label">Vista previa</span>
-    <div class="export-swatches" id="export-swatches"></div>
-    <span class="export-label">Formato</span>
-    <div class="export-formats">
-      <button class="export-format-btn" data-fmt="hex">
-        <div><div class="fmt-label">Códigos HEX</div><div class="fmt-desc">#FF6B6B, #4ECDC4…</div></div>
-        <div class="fmt-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
+    <!-- BOTTOM BAR -->
+    <nav class="bottombar">
+      <button
+        id="removeBtn"
+        class="bar-btn icon-only"
+        aria-label="Quitar color"
+      >
+        <svg
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
+        </svg>
       </button>
-      <button class="export-format-btn" data-fmt="hsl">
-        <div><div class="fmt-label">Valores HSL</div><div class="fmt-desc">hsl(0, 72%, 65%)</div></div>
-        <div class="fmt-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
+      <button id="addBtn" class="bar-btn icon-only" aria-label="Agregar color">
+        <svg
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
       </button>
-      <button class="export-format-btn" data-fmt="css">
-        <div><div class="fmt-label">Variables CSS</div><div class="fmt-desc">--color-1: #FF6B6B;</div></div>
-        <div class="fmt-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
+      <div class="bar-divider"></div>
+      <button
+        id="undoBtn"
+        class="bar-btn icon-only"
+        aria-label="Deshacer"
+        title="Deshacer (Ctrl+Z)"
+      >
+        <svg
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6"
+          />
+        </svg>
       </button>
-      <button class="export-format-btn" data-fmt="tailwind">
-        <div><div class="fmt-label">Config Tailwind</div><div class="fmt-desc">colors: { primary: '#FF6B6B' }</div></div>
-        <div class="fmt-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
+      <div class="bar-divider"></div>
+      <button id="historyBtn" class="bar-btn" aria-label="Ver historial">
+        <svg
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        Historial
       </button>
-    </div>
-  </div>
-</div>
+      <button id="exportBtn" class="bar-btn" aria-label="Exportar paleta">
+        <svg
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+          />
+        </svg>
+        Exportar
+      </button>
+      <div class="bar-divider"></div>
+      <button
+        id="generateBtn"
+        class="bar-btn primary"
+        aria-label="Generar paleta"
+      >
+        <svg
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+        Generar
+      </button>
+    </nav>
 
-<!-- BOTTOM BAR -->
-<nav class="bottombar">
-  <button id="removeBtn" class="bar-btn icon-only" aria-label="Quitar color">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
-  </button>
-  <button id="addBtn" class="bar-btn icon-only" aria-label="Agregar color">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-  </button>
-  <div class="bar-divider"></div>
-  <button id="undoBtn" class="bar-btn icon-only" aria-label="Deshacer" title="Deshacer (Ctrl+Z)">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6"/></svg>
-  </button>
-  <div class="bar-divider"></div>
-  <button id="historyBtn" class="bar-btn" aria-label="Ver historial">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    Historial
-  </button>
-  <button id="exportBtn" class="bar-btn" aria-label="Exportar paleta">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-    Exportar
-  </button>
-  <div class="bar-divider"></div>
-  <button id="generateBtn" class="bar-btn primary" aria-label="Generar paleta">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-    Generar
-  </button>
-</nav>
+    <div id="toast" role="status" aria-live="polite"></div>
 
-<div id="toast" role="status" aria-live="polite"></div>
+    <!-- SVG ICONS (usados por JS) -->
+    <template id="icon-lock">
+      <svg
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+        width="15"
+        height="15"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+        />
+      </svg>
+    </template>
+    <template id="icon-unlock">
+      <svg
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+        width="15"
+        height="15"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"
+        />
+      </svg>
+    </template>
+    <template id="icon-copy">
+      <svg
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+        width="15"
+        height="15"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+        />
+      </svg>
+    </template>
 
-<!-- SVG ICONS (usados por JS) -->
-<template id="icon-lock">
-  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-</template>
-<template id="icon-unlock">
-  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-</template>
-<template id="icon-copy">
-  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-</template>
+    <script>
+      /* ── Constantes ───────────────────────────────────────── */
+      const MIN_COLS = 1,
+        MAX_COLS = 8;
 
-<script>
-/* ── Constantes ───────────────────────────────────────── */
-const MIN_COLS = 2, MAX_COLS = 8;
+      /* ── Estado ───────────────────────────────────────────── */
+      let colors = [];
+      let history = [];
+      let undoStack = [];
+      let harmonyMode = "random";
 
-/* ── Estado ───────────────────────────────────────────── */
-let colors      = [];
-let history     = [];
-let undoStack   = [];
-let harmonyMode = 'random';
+      /* ── Utilidades de color ──────────────────────────────── */
+      function hslToHex(h, s, l) {
+        s /= 100;
+        l /= 100;
+        const a = s * Math.min(l, 1 - l);
+        const f = (n) => {
+          const k = (n + h / 30) % 12;
+          return Math.round(
+            255 * (l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)),
+          )
+            .toString(16)
+            .padStart(2, "0");
+        };
+        return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+      }
 
-/* ── Utilidades de color ──────────────────────────────── */
-function hslToHex(h, s, l) {
-  s /= 100; l /= 100;
-  const a = s * Math.min(l, 1 - l);
-  const f = n => {
-    const k = (n + h / 30) % 12;
-    return Math.round(255 * (l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)))
-      .toString(16).padStart(2, '0');
-  };
-  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
-}
+      function isLight(hex) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.52;
+      }
 
-function isLight(hex) {
-  const r = parseInt(hex.slice(1,3), 16);
-  const g = parseInt(hex.slice(3,5), 16);
-  const b = parseInt(hex.slice(5,7), 16);
-  return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.52;
-}
+      function makeColor(h, s, l, locked = false) {
+        return {
+          h: Math.round(h) % 360,
+          s: Math.round(s),
+          l: Math.round(l),
+          hex: hslToHex(h, s, l),
+          locked,
+        };
+      }
 
-function makeColor(h, s, l, locked = false) {
-  return {
-    h: Math.round(h) % 360,
-    s: Math.round(s),
-    l: Math.round(l),
-    hex: hslToHex(h, s, l),
-    locked,
-  };
-}
+      function rndInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
 
-function rndInRange(min, max) { return Math.random() * (max - min) + min; }
+      /* ── Modos de armonía ─────────────────────────────────── */
+      function generateByMode(mode, count) {
+        const baseH = Math.floor(Math.random() * 360);
+        const baseS = rndInRange(45, 80);
+        const baseL = rndInRange(35, 65);
 
-/* ── Modos de armonía ─────────────────────────────────── */
-function generateByMode(mode, count) {
-  const baseH = Math.floor(Math.random() * 360);
-  const baseS = rndInRange(45, 80);
-  const baseL = rndInRange(35, 65);
+        switch (mode) {
+          case "analogous": {
+            const step = 30;
+            return Array.from({ length: count }, (_, i) => {
+              const h =
+                (baseH + (i - Math.floor(count / 2)) * step + 360) % 360;
+              return makeColor(
+                h,
+                baseS + rndInRange(-5, 5),
+                baseL + rndInRange(-8, 8),
+              );
+            });
+          }
+          case "complementary": {
+            const hues = [baseH, (baseH + 180) % 360];
+            return Array.from({ length: count }, (_, i) =>
+              makeColor(
+                hues[i % 2] + rndInRange(-15, 15),
+                baseS + rndInRange(-10, 10),
+                baseL + rndInRange(-15, 15),
+              ),
+            );
+          }
+          case "triadic": {
+            const hues = [baseH, (baseH + 120) % 360, (baseH + 240) % 360];
+            return Array.from({ length: count }, (_, i) =>
+              makeColor(
+                hues[i % 3] + rndInRange(-10, 10),
+                baseS + rndInRange(-8, 8),
+                baseL + rndInRange(-10, 10),
+              ),
+            );
+          }
+          case "monochromatic": {
+            const step = 60 / count;
+            return Array.from({ length: count }, (_, i) =>
+              makeColor(
+                baseH,
+                baseS + rndInRange(-5, 5),
+                20 + i * step + rndInRange(-3, 3),
+              ),
+            );
+          }
+          default:
+            return Array.from({ length: count }, () =>
+              makeColor(
+                rndInRange(0, 360),
+                rndInRange(40, 85),
+                rndInRange(28, 70),
+              ),
+            );
+        }
+      }
 
-  switch (mode) {
-    case 'analogous': {
-      const step = 30;
-      return Array.from({ length: count }, (_, i) => {
-        const h = (baseH + (i - Math.floor(count / 2)) * step + 360) % 360;
-        return makeColor(h, baseS + rndInRange(-5, 5), baseL + rndInRange(-8, 8));
-      });
-    }
-    case 'complementary': {
-      const hues = [baseH, (baseH + 180) % 360];
-      return Array.from({ length: count }, (_, i) =>
-        makeColor(hues[i % 2] + rndInRange(-15, 15), baseS + rndInRange(-10, 10), baseL + rndInRange(-15, 15)));
-    }
-    case 'triadic': {
-      const hues = [baseH, (baseH + 120) % 360, (baseH + 240) % 360];
-      return Array.from({ length: count }, (_, i) =>
-        makeColor(hues[i % 3] + rndInRange(-10, 10), baseS + rndInRange(-8, 8), baseL + rndInRange(-10, 10)));
-    }
-    case 'monochromatic': {
-      const step = 60 / count;
-      return Array.from({ length: count }, (_, i) =>
-        makeColor(baseH, baseS + rndInRange(-5, 5), 20 + i * step + rndInRange(-3, 3)));
-    }
-    default:
-      return Array.from({ length: count }, () =>
-        makeColor(rndInRange(0, 360), rndInRange(40, 85), rndInRange(28, 70)));
-  }
-}
+      /* ── Generación ───────────────────────────────────────── */
+      function regenerateUnlocked() {
+        saveUndo();
+        const newColors = generateByMode(harmonyMode, colors.length);
+        colors = colors.map((c, i) => (c.locked ? c : newColors[i]));
+        saveHistory();
+        render();
+      }
 
-/* ── Generación ───────────────────────────────────────── */
-function regenerateUnlocked() {
-  saveUndo();
-  const newColors = generateByMode(harmonyMode, colors.length);
-  colors = colors.map((c, i) => c.locked ? c : newColors[i]);
-  saveHistory();
-  render();
-}
+      function addColor() {
+        if (colors.length >= MAX_COLS) return;
+        saveUndo();
+        const [newC] = generateByMode(harmonyMode, 1);
+        colors.push(newC);
+        saveHistory();
+        render();
+      }
 
-function addColor() {
-  if (colors.length >= MAX_COLS) return;
-  saveUndo();
-  const [newC] = generateByMode(harmonyMode, 1);
-  colors.push(newC);
-  saveHistory();
-  render();
-}
+      function removeColor() {
+        if (colors.length <= MIN_COLS) return;
+        saveUndo();
+        const idx = colors.findIndex((c) => !c.locked);
+        if (idx !== -1) colors.splice(idx, 1);
+        else colors.pop();
+        render();
+      }
 
-function removeColor() {
-  if (colors.length <= MIN_COLS) return;
-  saveUndo();
-  const idx = colors.findIndex(c => !c.locked);
-  if (idx !== -1) colors.splice(idx, 1);
-  else colors.pop();
-  render();
-}
+      function toggleLock(index) {
+        colors[index].locked = !colors[index].locked;
+        render();
+      }
 
-function toggleLock(index) {
-  colors[index].locked = !colors[index].locked;
-  render();
-}
+      /* ── Deshacer ─────────────────────────────────────────── */
+      function saveUndo() {
+        undoStack.push(JSON.parse(JSON.stringify(colors)));
+        if (undoStack.length > 20) undoStack.shift();
+        document.getElementById("undoBtn").disabled = false;
+      }
 
-/* ── Deshacer ─────────────────────────────────────────── */
-function saveUndo() {
-  undoStack.push(JSON.parse(JSON.stringify(colors)));
-  if (undoStack.length > 20) undoStack.shift();
-  document.getElementById('undoBtn').disabled = false;
-}
+      function undo() {
+        if (!undoStack.length) return;
+        colors = undoStack.pop();
+        if (!undoStack.length)
+          document.getElementById("undoBtn").disabled = true;
+        render();
+        toast("Deshecho");
+      }
 
-function undo() {
-  if (!undoStack.length) return;
-  colors = undoStack.pop();
-  if (!undoStack.length) document.getElementById('undoBtn').disabled = true;
-  render();
-  toast('Deshecho');
-}
+      /* ── Historial ────────────────────────────────────────── */
+      function saveHistory() {
+        history.unshift(JSON.parse(JSON.stringify(colors)));
+        if (history.length > 20) history.pop();
+      }
 
-/* ── Historial ────────────────────────────────────────── */
-function saveHistory() {
-  history.unshift(JSON.parse(JSON.stringify(colors)));
-  if (history.length > 20) history.pop();
-}
+      function renderHistory() {
+        const list = document.getElementById("history-list");
+        list.innerHTML = "";
+        history.forEach((palette, i) => {
+          const item = document.createElement("div");
+          item.className = "history-item";
+          item.setAttribute("role", "listitem");
+          item.setAttribute("aria-label", `Paleta ${i + 1}`);
+          item.title = "Restaurar esta paleta";
+          palette.forEach((c) => {
+            const sw = document.createElement("div");
+            sw.className = "history-swatch";
+            sw.style.background = c.hex;
+            item.appendChild(sw);
+          });
+          const lbl = document.createElement("div");
+          lbl.className = "history-item-label";
+          lbl.textContent = `${palette.length} col`;
+          item.appendChild(lbl);
+          item.addEventListener("click", () => {
+            saveUndo();
+            colors = JSON.parse(JSON.stringify(palette));
+            render();
+            closeHistory();
+            toast("Paleta restaurada");
+          });
+          list.appendChild(item);
+        });
+      }
 
-function renderHistory() {
-  const list = document.getElementById('history-list');
-  list.innerHTML = '';
-  history.forEach((palette, i) => {
-    const item = document.createElement('div');
-    item.className = 'history-item';
-    item.setAttribute('role', 'listitem');
-    item.setAttribute('aria-label', `Paleta ${i + 1}`);
-    item.title = 'Restaurar esta paleta';
-    palette.forEach(c => {
-      const sw = document.createElement('div');
-      sw.className = 'history-swatch';
-      sw.style.background = c.hex;
-      item.appendChild(sw);
-    });
-    const lbl = document.createElement('div');
-    lbl.className = 'history-item-label';
-    lbl.textContent = `${palette.length} col`;
-    item.appendChild(lbl);
-    item.addEventListener('click', () => {
-      saveUndo();
-      colors = JSON.parse(JSON.stringify(palette));
-      render();
-      closeHistory();
-      toast('Paleta restaurada');
-    });
-    list.appendChild(item);
-  });
-}
+      /* ── Clipboard ────────────────────────────────────────── */
+      async function copy(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          toast(`${text} copiado`);
+        } catch {
+          toast("No se pudo copiar");
+        }
+      }
 
-/* ── Clipboard ────────────────────────────────────────── */
-async function copy(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    toast(`${text} copiado`);
-  } catch { toast('No se pudo copiar'); }
-}
+      /* ── Exportar ─────────────────────────────────────────── */
+      function openExport() {
+        const sw = document.getElementById("export-swatches");
+        sw.innerHTML = "";
+        colors.forEach((c) => {
+          const d = document.createElement("div");
+          d.className = "export-swatch";
+          d.style.background = c.hex;
+          sw.appendChild(d);
+        });
+        document.getElementById("export-panel").classList.add("open");
+        document.getElementById("overlay").classList.add("open");
+      }
 
-/* ── Exportar ─────────────────────────────────────────── */
-function openExport() {
-  const sw = document.getElementById('export-swatches');
-  sw.innerHTML = '';
-  colors.forEach(c => {
-    const d = document.createElement('div');
-    d.className = 'export-swatch';
-    d.style.background = c.hex;
-    sw.appendChild(d);
-  });
-  document.getElementById('export-panel').classList.add('open');
-  document.getElementById('overlay').classList.add('open');
-}
+      function closeExport() {
+        document.getElementById("export-panel").classList.remove("open");
+        document.getElementById("overlay").classList.remove("open");
+      }
 
-function closeExport() {
-  document.getElementById('export-panel').classList.remove('open');
-  document.getElementById('overlay').classList.remove('open');
-}
+      function exportAs(fmt) {
+        let text = "";
+        if (fmt === "hex") {
+          text = colors.map((c) => c.hex).join(", ");
+        } else if (fmt === "hsl") {
+          text = colors.map((c) => `hsl(${c.h}, ${c.s}%, ${c.l}%)`).join("\n");
+        } else if (fmt === "css") {
+          text =
+            ":root {\n" +
+            colors.map((c, i) => `  --color-${i + 1}: ${c.hex};`).join("\n") +
+            "\n}";
+        } else if (fmt === "tailwind") {
+          const obj = colors
+            .map((c, i) => `    "color-${i + 1}": "${c.hex}"`)
+            .join(",\n");
+          text = `module.exports = {\n  theme: {\n    colors: {\n${obj}\n    }\n  }\n}`;
+        }
+        copy(text);
+        closeExport();
+      }
 
-function exportAs(fmt) {
-  let text = '';
-  if (fmt === 'hex') {
-    text = colors.map(c => c.hex).join(', ');
-  } else if (fmt === 'hsl') {
-    text = colors.map(c => `hsl(${c.h}, ${c.s}%, ${c.l}%)`).join('\n');
-  } else if (fmt === 'css') {
-    text = ':root {\n' + colors.map((c, i) => `  --color-${i+1}: ${c.hex};`).join('\n') + '\n}';
-  } else if (fmt === 'tailwind') {
-    const obj = colors.map((c, i) => `    "color-${i+1}": "${c.hex}"`).join(',\n');
-    text = `module.exports = {\n  theme: {\n    colors: {\n${obj}\n    }\n  }\n}`;
-  }
-  copy(text);
-  closeExport();
-}
+      /* ── Panel historial ──────────────────────────────────── */
+      function openHistory() {
+        renderHistory();
+        document.getElementById("history-panel").classList.add("open");
+      }
 
-/* ── Panel historial ──────────────────────────────────── */
-function openHistory() {
-  renderHistory();
-  document.getElementById('history-panel').classList.add('open');
-}
+      function closeHistory() {
+        document.getElementById("history-panel").classList.remove("open");
+      }
 
-function closeHistory() {
-  document.getElementById('history-panel').classList.remove('open');
-}
+      /* ── Toast ────────────────────────────────────────────── */
+      let toastTimer;
+      function toast(msg) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
+      }
 
-/* ── Toast ────────────────────────────────────────────── */
-let toastTimer;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
-}
+      /* ── Íconos ───────────────────────────────────────────── */
+      const iconLock = document.getElementById("icon-lock").innerHTML;
+      const iconUnlock = document.getElementById("icon-unlock").innerHTML;
+      const iconCopy = document.getElementById("icon-copy").innerHTML;
 
-/* ── Íconos ───────────────────────────────────────────── */
-const iconLock   = document.getElementById('icon-lock').innerHTML;
-const iconUnlock = document.getElementById('icon-unlock').innerHTML;
-const iconCopy   = document.getElementById('icon-copy').innerHTML;
+      /* ── Render principal ─────────────────────────────────── */
+      function render() {
+        const palette = document.getElementById("palette");
+        palette.innerHTML = "";
 
-/* ── Render principal ─────────────────────────────────── */
-function render() {
-  const palette = document.getElementById('palette');
-  palette.innerHTML = '';
+        colors.forEach((color, idx) => {
+          const light = isLight(color.hex);
+          const theme = light ? "light" : "dark";
+          const txtClr = light ? "#111" : "#fff";
 
-  colors.forEach((color, idx) => {
-    const light  = isLight(color.hex);
-    const theme  = light ? 'light' : 'dark';
-    const txtClr = light ? '#111' : '#fff';
+          const col = document.createElement("div");
+          col.className = "color-col";
+          col.style.backgroundColor = color.hex;
+          col.style.animationDelay = `${idx * 40}ms`;
+          col.setAttribute("role", "listitem");
+          col.setAttribute("tabindex", "0");
+          col.setAttribute(
+            "aria-label",
+            `${color.hex}. Enter para generar gama.`,
+          );
 
-    const col = document.createElement('div');
-    col.className = 'color-col';
-    col.style.backgroundColor = color.hex;
-    col.style.animationDelay  = `${idx * 40}ms`;
-    col.setAttribute('role', 'listitem');
-    col.setAttribute('tabindex', '0');
-    col.setAttribute('aria-label', `${color.hex}. Enter para generar gama.`);
+          // Candado visible si bloqueado
+          if (color.locked) {
+            const badge = document.createElement("div");
+            badge.className = `lock-badge ${theme}`;
+            badge.innerHTML = iconLock;
+            col.appendChild(badge);
+          }
 
-    // Candado visible si bloqueado
-    if (color.locked) {
-      const badge = document.createElement('div');
-      badge.className = `lock-badge ${theme}`;
-      badge.innerHTML = iconLock;
-      col.appendChild(badge);
-    }
+          // Info central
+          const info = document.createElement("div");
+          info.className = "col-info";
 
-    // Info central
-    const info = document.createElement('div');
-    info.className = 'col-info';
+          const hexBtn = document.createElement("button");
+          hexBtn.className = `col-hex ${theme}`;
+          hexBtn.style.color = txtClr;
+          hexBtn.textContent = color.hex;
+          hexBtn.setAttribute("aria-label", `Copiar ${color.hex}`);
 
-    const hexBtn = document.createElement('button');
-    hexBtn.className = `col-hex ${theme}`;
-    hexBtn.style.color = txtClr;
-    hexBtn.textContent = color.hex;
-    hexBtn.setAttribute('aria-label', `Copiar ${color.hex}`);
+          const hsl = document.createElement("div");
+          hsl.className = "col-hsl";
+          hsl.style.color = txtClr;
+          hsl.textContent = `${color.h}° ${color.s}% ${color.l}%`;
 
-    const hsl = document.createElement('div');
-    hsl.className = 'col-hsl';
-    hsl.style.color = txtClr;
-    hsl.textContent = `${color.h}° ${color.s}% ${color.l}%`;
+          info.append(hexBtn, hsl);
+          col.appendChild(info);
 
-    info.append(hexBtn, hsl);
-    col.appendChild(info);
+          // Botones acción
+          const actions = document.createElement("div");
+          actions.className = "col-actions";
 
-    // Botones acción
-    const actions = document.createElement('div');
-    actions.className = 'col-actions';
+          const copyBtn = document.createElement("button");
+          copyBtn.className = `col-btn ${theme}`;
+          copyBtn.innerHTML = iconCopy;
+          copyBtn.setAttribute("aria-label", "Copiar HEX");
 
-    const copyBtn = document.createElement('button');
-    copyBtn.className = `col-btn ${theme}`;
-    copyBtn.innerHTML = iconCopy;
-    copyBtn.setAttribute('aria-label', 'Copiar HEX');
+          const lockBtn = document.createElement("button");
+          lockBtn.className = `col-btn ${theme}${color.locked ? " active-lock" : ""}`;
+          lockBtn.innerHTML = color.locked ? iconLock : iconUnlock;
+          lockBtn.setAttribute(
+            "aria-label",
+            color.locked ? "Desbloquear" : "Bloquear",
+          );
 
-    const lockBtn = document.createElement('button');
-    lockBtn.className = `col-btn ${theme}${color.locked ? ' active-lock' : ''}`;
-    lockBtn.innerHTML = color.locked ? iconLock : iconUnlock;
-    lockBtn.setAttribute('aria-label', color.locked ? 'Desbloquear' : 'Bloquear');
+          actions.append(copyBtn, lockBtn);
+          col.appendChild(actions);
 
-    actions.append(copyBtn, lockBtn);
-    col.appendChild(actions);
+          // Eventos
+          hexBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            copy(color.hex);
+          });
+          copyBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            copy(color.hex);
+          });
+          lockBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleLock(idx);
+          });
 
-    // Eventos
-    hexBtn.addEventListener('click', e => { e.stopPropagation(); copy(color.hex); });
-    copyBtn.addEventListener('click', e => { e.stopPropagation(); copy(color.hex); });
-    lockBtn.addEventListener('click', e => { e.stopPropagation(); toggleLock(idx); });
+          col.addEventListener("click", (e) => {
+            if (e.target.closest("button")) return;
+            saveUndo();
+            const newColors = generateByMode(harmonyMode, colors.length);
+            const baseH = color.h;
+            colors = colors.map((c, i) => {
+              if (c.locked) return c;
+              if (i === idx) return { ...c, locked: true };
+              const nc = newColors[i];
+              return makeColor((baseH + nc.h) % 360, nc.s, nc.l);
+            });
+            saveHistory();
+            render();
+          });
 
-    col.addEventListener('click', e => {
-      if (e.target.closest('button')) return;
-      saveUndo();
-      const newColors = generateByMode(harmonyMode, colors.length);
-      const baseH = color.h;
-      colors = colors.map((c, i) => {
-        if (c.locked) return c;
-        if (i === idx) return { ...c, locked: true };
-        const nc = newColors[i];
-        return makeColor((baseH + nc.h) % 360, nc.s, nc.l);
-      });
+          col.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              col.click();
+            }
+          });
+
+          palette.appendChild(col);
+        });
+
+        document.getElementById("removeBtn").disabled =
+          colors.length <= MIN_COLS;
+        document.getElementById("addBtn").disabled = colors.length >= MAX_COLS;
+        document.getElementById("undoBtn").disabled = undoStack.length === 0;
+      }
+
+      /* ── Arranque ─────────────────────────────────────────── */
+      colors = generateByMode("random", 5);
       saveHistory();
       render();
-    });
 
-    col.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); col.click(); }
-    });
+      /* ── Eventos globales ─────────────────────────────────── */
+      document
+        .getElementById("generateBtn")
+        .addEventListener("click", regenerateUnlocked);
+      document.getElementById("addBtn").addEventListener("click", addColor);
+      document
+        .getElementById("removeBtn")
+        .addEventListener("click", removeColor);
+      document.getElementById("undoBtn").addEventListener("click", undo);
+      document
+        .getElementById("historyBtn")
+        .addEventListener("click", openHistory);
+      document
+        .getElementById("closeHistory")
+        .addEventListener("click", closeHistory);
+      document
+        .getElementById("exportBtn")
+        .addEventListener("click", openExport);
+      document
+        .getElementById("closeExport")
+        .addEventListener("click", closeExport);
+      document.getElementById("overlay").addEventListener("click", () => {
+        closeExport();
+        closeHistory();
+      });
 
-    palette.appendChild(col);
-  });
+      document
+        .querySelectorAll(".export-format-btn")
+        .forEach((btn) =>
+          btn.addEventListener("click", () => exportAs(btn.dataset.fmt)),
+        );
 
-  document.getElementById('removeBtn').disabled = colors.length <= MIN_COLS;
-  document.getElementById('addBtn').disabled    = colors.length >= MAX_COLS;
-  document.getElementById('undoBtn').disabled   = undoStack.length === 0;
-}
+      document.querySelectorAll(".mode-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document
+            .querySelectorAll(".mode-tab")
+            .forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          harmonyMode = tab.dataset.mode;
+          regenerateUnlocked();
+        });
+      });
 
-/* ── Arranque ─────────────────────────────────────────── */
-colors = generateByMode('random', 5);
-saveHistory();
-render();
-
-/* ── Eventos globales ─────────────────────────────────── */
-document.getElementById('generateBtn').addEventListener('click', regenerateUnlocked);
-document.getElementById('addBtn').addEventListener('click', addColor);
-document.getElementById('removeBtn').addEventListener('click', removeColor);
-document.getElementById('undoBtn').addEventListener('click', undo);
-document.getElementById('historyBtn').addEventListener('click', openHistory);
-document.getElementById('closeHistory').addEventListener('click', closeHistory);
-document.getElementById('exportBtn').addEventListener('click', openExport);
-document.getElementById('closeExport').addEventListener('click', closeExport);
-document.getElementById('overlay').addEventListener('click', () => {
-  closeExport();
-  closeHistory();
-});
-
-document.querySelectorAll('.export-format-btn').forEach(btn =>
-  btn.addEventListener('click', () => exportAs(btn.dataset.fmt)));
-
-document.querySelectorAll('.mode-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    harmonyMode = tab.dataset.mode;
-    regenerateUnlocked();
-  });
-});
-
-document.addEventListener('keydown', e => {
-  if (e.target !== document.body) return;
-  if (e.code === 'Space') { e.preventDefault(); regenerateUnlocked(); }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
-});
-</script>
-</body>
+      document.addEventListener("keydown", (e) => {
+        if (e.target !== document.body) return;
+        if (e.code === "Space") {
+          e.preventDefault();
+          regenerateUnlocked();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+          e.preventDefault();
+          undo();
+        }
+      });
+    </script>
+  </body>
 </html>
