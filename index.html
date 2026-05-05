@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chromata — Explorador de Paletas</title>
+  <meta name="description" content="Genera paletas de colores hermosas al instante." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+/* ── Tokens ───────────────────────────────────────────── */
+:root {
+  --bg: #080808;
+  --surface: rgba(255,255,255,.04);
+  --surface-hover: rgba(255,255,255,.08);
+  --border: rgba(255,255,255,.08);
+  --border-strong: rgba(255,255,255,.15);
+  --text: #f2efe8;
+  --muted: rgba(242,239,232,.4);
+  --font-sans: 'Instrument Sans', sans-serif;
+  --font-serif: 'Instrument Serif', serif;
+  --font-mono: 'DM Mono', monospace;
+  --ease: cubic-bezier(.4,0,.2,1);
+  --spring: cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ── Reset ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top bar ──────────────────────────────────────────── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: rgba(8,8,8,.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 22px;
+  letter-spacing: -.01em;
+  color: var(--text);
+  line-height: 1;
+}
+
+.logo span {
+  color: rgba(242,239,232,.35);
+  font-style: normal;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hint-pill {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 5px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  letter-spacing: .04em;
+}
+
+.hint-pill kbd {
+  background: rgba(255,255,255,.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+/* ── Modo selector ────────────────────────────────────── */
+.mode-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 3px;
+}
+
+.mode-tab {
+  font-size: 11px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 99px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .2s var(--ease);
+  white-space: nowrap;
+}
+
+.mode-tab.active {
+  background: rgba(255,255,255,.9);
+  color: #080808;
+}
+
+/* ── Paleta principal ─────────────────────────────────── */
+#palette {
+  display: flex;
+  flex: 1;
+  margin-top: 57px;
+  margin-bottom: 72px;
+  overflow: hidden;
+}
+
+.color-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: flex .35s var(--ease);
+  gap: 10px;
+  animation: fadeUp .4s var(--ease) both;
+}
+
+.color-col:hover { flex: 1.35; }
+.color-col:focus-visible { outline: 3px solid rgba(255,255,255,.4); outline-offset: -3px; }
+
+/* info central */
+.col-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.col-hex {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  pointer-events: all;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  transition: background .18s, transform .18s var(--spring);
+}
+
+.col-hex:hover { transform: scale(1.06); }
+
+.col-hsl {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: .5;
+  letter-spacing: .04em;
+}
+
+/* botones acción flotantes */
+.col-actions {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity .2s, transform .2s var(--spring);
+}
+
+.color-col:hover .col-actions {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.col-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .18s var(--spring), background .15s;
+}
+
+.col-btn:hover { transform: scale(1.14); }
+.col-btn svg { width: 15px; height: 15px; }
+
+.col-btn.light { background: rgba(0,0,0,.12); color: #111; }
+.col-btn.light:hover { background: rgba(0,0,0,.22); }
+.col-btn.dark  { background: rgba(255,255,255,.14); color: #fff; }
+.col-btn.dark:hover  { background: rgba(255,255,255,.24); }
+.col-btn.active-lock { opacity: 1 !important; }
+
+/* ícono candado */
+.lock-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lock-badge svg { width: 13px; height: 13px; }
+.lock-badge.light { background: rgba(0,0,0,.15); color: #111; }
+.lock-badge.dark  { background: rgba(255,255,255,.18); color: #fff; }
+
+/* ── Panel historial ──────────────────────────────────── */
+#history-panel {
+  position: fixed;
+  right: 0; top: 57px; bottom: 72px;
+  width: 260px;
+  background: rgba(12,12,12,.97);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid var(--border);
+  transform: translateX(100%);
+  transition: transform .3s var(--ease);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#history-panel.open { transform: translateX(0); }
+
+.panel-head {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.panel-close {
+  width: 24px; height: 24px;
+  border: none; background: none;
+  color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+  transition: background .15s, color .15s;
+}
+.panel-close:hover { background: var(--surface-hover); color: var(--text); }
+.panel-close svg { width: 14px; height: 14px; }
+
+#history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#history-list::-webkit-scrollbar { width: 4px; }
+#history-list::-webkit-scrollbar-track { background: transparent; }
+#history-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+
+.history-item {
+  display: flex;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .18s var(--spring), opacity .18s;
+  border: 1px solid var(--border);
+}
+
+.history-item:hover { transform: scale(1.03); }
+
+.history-swatch {
+  flex: 1;
+  height: 100%;
+}
+
+.history-item-label {
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  min-width: 60px;
+  background: rgba(255,255,255,.03);
+}
+
+/* ── Panel exportar ───────────────────────────────────── */
+#export-panel {
+  position: fixed;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%) scale(.92);
+  width: min(480px, 92vw);
+  background: #111;
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s var(--ease), transform .22s var(--spring);
+  box-shadow: 0 40px 80px rgba(0,0,0,.7);
+}
+
+#export-panel.open {
+  opacity: 1;
+  pointer-events: all;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+#overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.6);
+  backdrop-filter: blur(4px);
+  z-index: 190;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s;
+}
+#overlay.open { opacity: 1; pointer-events: all; }
+
+.export-head {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.export-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.export-body { padding: 20px 24px 24px; }
+
+.export-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.export-swatches {
+  display: flex;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.export-swatch { flex: 1; }
+
+.export-formats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.export-format-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  transition: background .15s, border-color .15s, transform .15s var(--spring);
+}
+
+.export-format-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  transform: translateX(3px);
+}
+
+.export-format-btn .fmt-label { font-weight: 500; }
+.export-format-btn .fmt-desc  { font-size: 11px; color: var(--muted); }
+.export-format-btn .fmt-icon  { color: var(--muted); }
+.export-format-btn .fmt-icon svg { width: 15px; height: 15px; }
+
+/* ── Bottom bar ───────────────────────────────────────── */
+.bottombar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 72px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(8,8,8,.9);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding: 0 24px;
+}
+
+.bar-btn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: background .15s, border-color .15s, transform .15s var(--spring);
+}
+
+.bar-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.bar-btn:active { transform: scale(.96); }
+.bar-btn svg { width: 14px; height: 14px; }
+
+.bar-btn.icon-only { width: 38px; padding: 0; justify-content: center; }
+
+.bar-btn.primary {
+  background: var(--text);
+  color: #080808;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.bar-btn.primary:hover { background: #fff; }
+
+.bar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  margin: 0 2px;
+}
+
+.bar-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+/* ── Toast ────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: rgba(20,20,20,.95);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  padding: 9px 18px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: .04em;
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s var(--spring);
+  white-space: nowrap;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Animación entrada ────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  #palette { flex-direction: column; }
+  .color-col:hover { flex: 1.2; }
+  .col-actions { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .col-hex { font-size: 16px; }
+  .hint-pill { display: none; }
+  #history-panel {
+    width: 100%;
+    top: auto;
+    bottom: 72px;
+    height: 50vh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    transform: translateY(100%);
+  }
+  #history-panel.open { transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="logo">ColorsRam <span></span></div>
+  <div class="topbar-right">
+    <div class="mode-tabs" role="group" aria-label="Modo de paleta">
+      <button class="mode-tab active" data-mode="random">Libre</button>
+      <button class="mode-tab" data-mode="analogous">Análoga</button>
+      <button class="mode-tab" data-mode="complementary">Complementaria</button>
+      <button class="mode-tab" data-mode="triadic">Triádica</button>
+      <button class="mode-tab" data-mode="monochromatic">Mono</button>
+    </div>
+    <div class="hint-pill"><kbd>espacio</kbd> genera</div>
+  </div>
+</header>
+
+<!-- PALETA -->
+<div id="palette" role="list" aria-label="Paleta de colores"></div>
+
+<!-- PANEL HISTORIAL -->
+<aside id="history-panel" aria-label="Historial de paletas">
+  <div class="panel-head">
+    <span class="panel-title">Historial</span>
+    <button class="panel-close" id="closeHistory" aria-label="Cerrar historial">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="history-list" role="list" aria-label="Paletas guardadas"></div>
+</aside>
+
+<!-- OVERLAY -->
+<div id="overlay"></div>
+
+<!-- PANEL EXPORTAR -->
+<div id="export-panel" role="dialog" aria-modal="true" aria-label="Exportar paleta">
+  <div class="export-head">
+    <span class="export-title">Exportar paleta</span>
+    <button class="panel-close" id="closeExport" aria-label="Cerrar">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="export-body">
+    <span class="export-label">Vista previa</span>
+    <div class="export-swatches" id="export-swatches"></div>
+    <span class="export-label">Formato</span>
+    <div class="export-formats">
+      <button class="export-format-btn" data-fmt="hex">
+        <div><div class="fmt-label">Códigos HEX</div><div class="fmt-desc">#FF6B6B, #4ECDC4…</div></div>
+        <div class="fmt-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
+      </button>
+      <button class="export-format-btn" data-fmt="hsl">
+        <div><div class="fmt-label">Valores HSL</div><div class="fmt-desc">hsl(0, 72%, 65%)</div></div>
+        <div class="fmt-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
+      </button>
+      <button class="export-format-btn" data-fmt="css">
+        <div><div class="fmt-label">Variables CSS</div><div class="fmt-desc">--color-1: #FF6B6B;</div></div>
+        <div class="fmt-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
+      </button>
+      <button class="export-format-btn" data-fmt="tailwind">
+        <div><div class="fmt-label">Config Tailwind</div><div class="fmt-desc">colors: { primary: '#FF6B6B' }</div></div>
+        <div class="fmt-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<nav class="bottombar">
+  <button id="removeBtn" class="bar-btn icon-only" aria-label="Quitar color">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+  </button>
+  <button id="addBtn" class="bar-btn icon-only" aria-label="Agregar color">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+  </button>
+  <div class="bar-divider"></div>
+  <button id="undoBtn" class="bar-btn icon-only" aria-label="Deshacer" title="Deshacer (Ctrl+Z)">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6M3 10l6-6"/></svg>
+  </button>
+  <div class="bar-divider"></div>
+  <button id="historyBtn" class="bar-btn" aria-label="Ver historial">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    Historial
+  </button>
+  <button id="exportBtn" class="bar-btn" aria-label="Exportar paleta">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+    Exportar
+  </button>
+  <div class="bar-divider"></div>
+  <button id="generateBtn" class="bar-btn primary" aria-label="Generar paleta">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+    Generar
+  </button>
+</nav>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- SVG ICONS (usados por JS) -->
+<template id="icon-lock">
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+</template>
+<template id="icon-unlock">
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+</template>
+<template id="icon-copy">
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+</template>
+
+<script>
+/* ── Constantes ───────────────────────────────────────── */
+const MIN_COLS = 2, MAX_COLS = 8;
+
+/* ── Estado ───────────────────────────────────────────── */
+let colors      = [];
+let history     = [];
+let undoStack   = [];
+let harmonyMode = 'random';
+
+/* ── Utilidades de color ──────────────────────────────── */
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    return Math.round(255 * (l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)))
+      .toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+}
+
+function isLight(hex) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.52;
+}
+
+function makeColor(h, s, l, locked = false) {
+  return {
+    h: Math.round(h) % 360,
+    s: Math.round(s),
+    l: Math.round(l),
+    hex: hslToHex(h, s, l),
+    locked,
+  };
+}
+
+function rndInRange(min, max) { return Math.random() * (max - min) + min; }
+
+/* ── Modos de armonía ─────────────────────────────────── */
+function generateByMode(mode, count) {
+  const baseH = Math.floor(Math.random() * 360);
+  const baseS = rndInRange(45, 80);
+  const baseL = rndInRange(35, 65);
+
+  switch (mode) {
+    case 'analogous': {
+      const step = 30;
+      return Array.from({ length: count }, (_, i) => {
+        const h = (baseH + (i - Math.floor(count / 2)) * step + 360) % 360;
+        return makeColor(h, baseS + rndInRange(-5, 5), baseL + rndInRange(-8, 8));
+      });
+    }
+    case 'complementary': {
+      const hues = [baseH, (baseH + 180) % 360];
+      return Array.from({ length: count }, (_, i) =>
+        makeColor(hues[i % 2] + rndInRange(-15, 15), baseS + rndInRange(-10, 10), baseL + rndInRange(-15, 15)));
+    }
+    case 'triadic': {
+      const hues = [baseH, (baseH + 120) % 360, (baseH + 240) % 360];
+      return Array.from({ length: count }, (_, i) =>
+        makeColor(hues[i % 3] + rndInRange(-10, 10), baseS + rndInRange(-8, 8), baseL + rndInRange(-10, 10)));
+    }
+    case 'monochromatic': {
+      const step = 60 / count;
+      return Array.from({ length: count }, (_, i) =>
+        makeColor(baseH, baseS + rndInRange(-5, 5), 20 + i * step + rndInRange(-3, 3)));
+    }
+    default:
+      return Array.from({ length: count }, () =>
+        makeColor(rndInRange(0, 360), rndInRange(40, 85), rndInRange(28, 70)));
+  }
+}
+
+/* ── Generación ───────────────────────────────────────── */
+function regenerateUnlocked() {
+  saveUndo();
+  const newColors = generateByMode(harmonyMode, colors.length);
+  colors = colors.map((c, i) => c.locked ? c : newColors[i]);
+  saveHistory();
+  render();
+}
+
+function addColor() {
+  if (colors.length >= MAX_COLS) return;
+  saveUndo();
+  const [newC] = generateByMode(harmonyMode, 1);
+  colors.push(newC);
+  saveHistory();
+  render();
+}
+
+function removeColor() {
+  if (colors.length <= MIN_COLS) return;
+  saveUndo();
+  const idx = colors.findIndex(c => !c.locked);
+  if (idx !== -1) colors.splice(idx, 1);
+  else colors.pop();
+  render();
+}
+
+function toggleLock(index) {
+  colors[index].locked = !colors[index].locked;
+  render();
+}
+
+/* ── Deshacer ─────────────────────────────────────────── */
+function saveUndo() {
+  undoStack.push(JSON.parse(JSON.stringify(colors)));
+  if (undoStack.length > 20) undoStack.shift();
+  document.getElementById('undoBtn').disabled = false;
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  colors = undoStack.pop();
+  if (!undoStack.length) document.getElementById('undoBtn').disabled = true;
+  render();
+  toast('Deshecho');
+}
+
+/* ── Historial ────────────────────────────────────────── */
+function saveHistory() {
+  history.unshift(JSON.parse(JSON.stringify(colors)));
+  if (history.length > 20) history.pop();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = '';
+  history.forEach((palette, i) => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.setAttribute('role', 'listitem');
+    item.setAttribute('aria-label', `Paleta ${i + 1}`);
+    item.title = 'Restaurar esta paleta';
+    palette.forEach(c => {
+      const sw = document.createElement('div');
+      sw.className = 'history-swatch';
+      sw.style.background = c.hex;
+      item.appendChild(sw);
+    });
+    const lbl = document.createElement('div');
+    lbl.className = 'history-item-label';
+    lbl.textContent = `${palette.length} col`;
+    item.appendChild(lbl);
+    item.addEventListener('click', () => {
+      saveUndo();
+      colors = JSON.parse(JSON.stringify(palette));
+      render();
+      closeHistory();
+      toast('Paleta restaurada');
+    });
+    list.appendChild(item);
+  });
+}
+
+/* ── Clipboard ────────────────────────────────────────── */
+async function copy(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(`${text} copiado`);
+  } catch { toast('No se pudo copiar'); }
+}
+
+/* ── Exportar ─────────────────────────────────────────── */
+function openExport() {
+  const sw = document.getElementById('export-swatches');
+  sw.innerHTML = '';
+  colors.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'export-swatch';
+    d.style.background = c.hex;
+    sw.appendChild(d);
+  });
+  document.getElementById('export-panel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeExport() {
+  document.getElementById('export-panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function exportAs(fmt) {
+  let text = '';
+  if (fmt === 'hex') {
+    text = colors.map(c => c.hex).join(', ');
+  } else if (fmt === 'hsl') {
+    text = colors.map(c => `hsl(${c.h}, ${c.s}%, ${c.l}%)`).join('\n');
+  } else if (fmt === 'css') {
+    text = ':root {\n' + colors.map((c, i) => `  --color-${i+1}: ${c.hex};`).join('\n') + '\n}';
+  } else if (fmt === 'tailwind') {
+    const obj = colors.map((c, i) => `    "color-${i+1}": "${c.hex}"`).join(',\n');
+    text = `module.exports = {\n  theme: {\n    colors: {\n${obj}\n    }\n  }\n}`;
+  }
+  copy(text);
+  closeExport();
+}
+
+/* ── Panel historial ──────────────────────────────────── */
+function openHistory() {
+  renderHistory();
+  document.getElementById('history-panel').classList.add('open');
+}
+
+function closeHistory() {
+  document.getElementById('history-panel').classList.remove('open');
+}
+
+/* ── Toast ────────────────────────────────────────────── */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+/* ── Íconos ───────────────────────────────────────────── */
+const iconLock   = document.getElementById('icon-lock').innerHTML;
+const iconUnlock = document.getElementById('icon-unlock').innerHTML;
+const iconCopy   = document.getElementById('icon-copy').innerHTML;
+
+/* ── Render principal ─────────────────────────────────── */
+function render() {
+  const palette = document.getElementById('palette');
+  palette.innerHTML = '';
+
+  colors.forEach((color, idx) => {
+    const light  = isLight(color.hex);
+    const theme  = light ? 'light' : 'dark';
+    const txtClr = light ? '#111' : '#fff';
+
+    const col = document.createElement('div');
+    col.className = 'color-col';
+    col.style.backgroundColor = color.hex;
+    col.style.animationDelay  = `${idx * 40}ms`;
+    col.setAttribute('role', 'listitem');
+    col.setAttribute('tabindex', '0');
+    col.setAttribute('aria-label', `${color.hex}. Enter para generar gama.`);
+
+    // Candado visible si bloqueado
+    if (color.locked) {
+      const badge = document.createElement('div');
+      badge.className = `lock-badge ${theme}`;
+      badge.innerHTML = iconLock;
+      col.appendChild(badge);
+    }
+
+    // Info central
+    const info = document.createElement('div');
+    info.className = 'col-info';
+
+    const hexBtn = document.createElement('button');
+    hexBtn.className = `col-hex ${theme}`;
+    hexBtn.style.color = txtClr;
+    hexBtn.textContent = color.hex;
+    hexBtn.setAttribute('aria-label', `Copiar ${color.hex}`);
+
+    const hsl = document.createElement('div');
+    hsl.className = 'col-hsl';
+    hsl.style.color = txtClr;
+    hsl.textContent = `${color.h}° ${color.s}% ${color.l}%`;
+
+    info.append(hexBtn, hsl);
+    col.appendChild(info);
+
+    // Botones acción
+    const actions = document.createElement('div');
+    actions.className = 'col-actions';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = `col-btn ${theme}`;
+    copyBtn.innerHTML = iconCopy;
+    copyBtn.setAttribute('aria-label', 'Copiar HEX');
+
+    const lockBtn = document.createElement('button');
+    lockBtn.className = `col-btn ${theme}${color.locked ? ' active-lock' : ''}`;
+    lockBtn.innerHTML = color.locked ? iconLock : iconUnlock;
+    lockBtn.setAttribute('aria-label', color.locked ? 'Desbloquear' : 'Bloquear');
+
+    actions.append(copyBtn, lockBtn);
+    col.appendChild(actions);
+
+    // Eventos
+    hexBtn.addEventListener('click', e => { e.stopPropagation(); copy(color.hex); });
+    copyBtn.addEventListener('click', e => { e.stopPropagation(); copy(color.hex); });
+    lockBtn.addEventListener('click', e => { e.stopPropagation(); toggleLock(idx); });
+
+    col.addEventListener('click', e => {
+      if (e.target.closest('button')) return;
+      saveUndo();
+      const newColors = generateByMode(harmonyMode, colors.length);
+      const baseH = color.h;
+      colors = colors.map((c, i) => {
+        if (c.locked) return c;
+        if (i === idx) return { ...c, locked: true };
+        const nc = newColors[i];
+        return makeColor((baseH + nc.h) % 360, nc.s, nc.l);
+      });
+      saveHistory();
+      render();
+    });
+
+    col.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); col.click(); }
+    });
+
+    palette.appendChild(col);
+  });
+
+  document.getElementById('removeBtn').disabled = colors.length <= MIN_COLS;
+  document.getElementById('addBtn').disabled    = colors.length >= MAX_COLS;
+  document.getElementById('undoBtn').disabled   = undoStack.length === 0;
+}
+
+/* ── Arranque ─────────────────────────────────────────── */
+colors = generateByMode('random', 5);
+saveHistory();
+render();
+
+/* ── Eventos globales ─────────────────────────────────── */
+document.getElementById('generateBtn').addEventListener('click', regenerateUnlocked);
+document.getElementById('addBtn').addEventListener('click', addColor);
+document.getElementById('removeBtn').addEventListener('click', removeColor);
+document.getElementById('undoBtn').addEventListener('click', undo);
+document.getElementById('historyBtn').addEventListener('click', openHistory);
+document.getElementById('closeHistory').addEventListener('click', closeHistory);
+document.getElementById('exportBtn').addEventListener('click', openExport);
+document.getElementById('closeExport').addEventListener('click', closeExport);
+document.getElementById('overlay').addEventListener('click', () => {
+  closeExport();
+  closeHistory();
+});
+
+document.querySelectorAll('.export-format-btn').forEach(btn =>
+  btn.addEventListener('click', () => exportAs(btn.dataset.fmt)));
+
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    harmonyMode = tab.dataset.mode;
+    regenerateUnlocked();
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target !== document.body) return;
+  if (e.code === 'Space') { e.preventDefault(); regenerateUnlocked(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+});
+</script>
+</body>
+</html>
